@@ -15,6 +15,9 @@
 	let underlineLength = 4;
 
 	const onTextChanged = () => {
+
+		const isAlphabet = (charCode) => (charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122);
+
 		answerMode = false;
 		clickedAnswer = {};
 
@@ -39,9 +42,7 @@
 			}
 
 			for (let j = 0; j < words[i].length; ++j) {
-				const charCode = words[i].charCodeAt(j);
-
-				if ((charCode >= 65 && charCode <= 90) || (charCode >= 97 && charCode <= 122)) {
+				if (isAlphabet(words[i].charCodeAt(j))) {
 					words_temp[i + count] += words[i][j];
 					continue;
 				}
@@ -62,35 +63,13 @@
 			}
 		}
 
-		let newData = [];
-
-		words_temp.forEach((word, index) => {
-			if (word.includes("\n\n")) {
-				let temp = 0
-
-				for (let j = 0; j < word.length; ++j) {
-					if (word.charAt(j) === "\n") {
-						temp += 1;
-					}
-				}
-				for (let j = 0; j < temp; ++j) {
-					newData.push({type: 'br'});
-				}
-			} else if (word.includes(" ") ||
-					word.includes(".") || word.includes(",") ||
-					word.includes("!") || word.includes("?") ||
-					word.includes(";") || word.includes(":") ||
-					word.includes("“") || word.includes("”") ||
-					word.includes("'") || word.includes('"') ||
-					word.includes("—") || word.includes("-") ||
-					word.includes("(") || word.includes(")") ||
-					word.includes("[") || word.includes("]") ||
-					word.includes("{") || word.includes('}')) {
-				newData.push({type: 'not_word', id: index, text: word});
-			} else if (word.includes("\n")) {
-				newData.push({type: 'br'});
+		let newData = words_temp.map((word, index) => {
+			if (word.includes("\n")) {
+				return {type: 'br'};
+			} else if (!isAlphabet(word.charCodeAt(0))) {
+				return {type: 'not_word', id: index, text: word};
 			} else {
-				newData.push({type: 'word', id: index, text: word, selected: -1, answer: ''});
+				return {type: 'word', id: index, text: word, selected: -1, answer: ''};
 			}
 		});
 
@@ -99,8 +78,8 @@
 	};
 
 	const onWordClick = id => {
+		const data = mainContentData[id];
 		if (!answerMode) {
-			const data = mainContentData.find(data => data.id === id);
 			if (data.selected < 0) {
 				data.selected = answers.length;
 			} else {
@@ -113,15 +92,14 @@
 					.map((data, index) => {
 						return {id: data.id, number: String.fromCharCode(65 + index), text: data.text};
 					});
-
-			mainContentData = mainContentData // trigger update
-		} else if (clickedAnswer !== {}) {
-			const data = mainContentData.find(data => data.id === id);
+		} else if (clickedAnswer.number) {
 			if (data.selected >= 0) {
 				data.answer = clickedAnswer.number;
 				clickedAnswer = {};
 			}
 		}
+
+		mainContentData = mainContentData // trigger update
 	};
 
 	const onAnswerClick = answer => {
@@ -131,39 +109,30 @@
 	};
 
 	const onCopyClick = () => {
-		let copy_str = '';
+		let copyStr = '';
 
 		for (const data of mainContentData) {
 			if (data.type === 'word') {
 				if (data.selected >= 0) {
-					copy_str += `(${data.selected + numberStart})${'_'.repeat(underlineLength)}`;
+					copyStr += `(${data.selected + numberStart})${'_'.repeat(underlineLength)}`;
 				} else {
-					copy_str += data.text;
+					copyStr += data.text;
 				}
 			} else if (data.type === 'not_word') {
-				copy_str += data.text;
+				copyStr += data.text;
 			} else {
-				copy_str += "\n";
+				copyStr += "\n";
 			}
 		}
 
-		copy_str += '\n\n';
+		copyStr += '\n\n';
 
 		for (const ans of answers) {
-			copy_str += ans.number + '. ' + ans.text + '\n';
+			copyStr += ans.number + '. ' + ans.text + '\n';
 		}
 
-		copyToClipboard(copy_str);
+		navigator.clipboard.writeText(copyStr);
 	};
-
-	function copyToClipboard(str) {
-		const element = document.createElement('textarea');
-		element.value = str;
-		document.body.appendChild(element);
-		element.select();
-		document.execCommand('copy');
-		document.body.removeChild(element);
-	}
 </script>
 
 
