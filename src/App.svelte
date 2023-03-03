@@ -1,5 +1,6 @@
 <script>
 	import Word from './lib/Word.svelte';
+	import {onMount} from "svelte";
 
 	let content = "";
 
@@ -13,6 +14,27 @@
 
 	let numberStart = 1;
 	let underlineLength = 4;
+
+	let copied = false;
+	let linkCopied = false;
+
+	onMount(() => {
+		const urlParams = new URLSearchParams(window.location.search);
+		console.log(urlParams);
+		console.log(window.location.search);
+		const contentParam = urlParams.get('c');
+		if (contentParam) {
+			content = atob(contentParam);
+			onTextChanged();
+		}
+		const selectedParam = urlParams.get('s');
+		if (selectedParam) {
+			const selected = selectedParam.split(',');
+			for (const id of selected) {
+				onWordClick(parseInt(id));
+			}
+		}
+	});
 
 	const onTextChanged = () => {
 
@@ -132,6 +154,18 @@
 		}
 
 		navigator.clipboard.writeText(copyStr);
+		copied = true;
+		setTimeout(() => copied = false, 2000);
+	};
+
+	const onShareClick = () => {
+		const selected = mainContentData.filter(data => data.selected >= 0).map(data => data.id);
+		const url = new URL(window.location.href);
+		url.searchParams.set('c', btoa(content));
+		url.searchParams.set('s', selected.join(','));
+		navigator.clipboard.writeText(url.href);
+		linkCopied = true;
+		setTimeout(() => linkCopied = false, 2000);
 	};
 </script>
 
@@ -189,11 +223,74 @@
 		{/each}
 	</div>
 
-	<button id="btn_copy" on:click={onCopyClick}>Copy to clipboard</button>
+	<div id="copy_share_container">
+		<button id="btn_copy" on:click={onCopyClick}>
+			{#if copied}
+				Copied
+			{:else}
+				Copy to clipboard
+			{/if}
+		</button>
+
+		<button id="btn_share" on:click={onShareClick}>
+			{#if linkCopied}
+				Link copied
+			{:else}
+				Share link
+			{/if}
+		</button>
+	</div>
+
 </div>
 
 <style>
+
+	#btn_clear {
+		position: absolute;
+		right: 32px;
+		bottom: 28px;
+	}
+
+	#main_container {
+		padding: 8px 36px 0 36px;
+	}
+
+	#main {
+		border: 1px solid #AAA;
+		padding: 4px;
+		width: calc(100vw - 184px);
+		height: 28vh;
+		border-radius: 8px;
+	}
+
+	.answer:hover {
+		color: #1565c0;
+		font-weight: bold;
+	}
+
 	.answer.clicked {
 		color: purple;
+	}
+
+	#answer_container {
+		padding: 8px 36px 16px 36px;
+		position: relative;
+	}
+
+	#answer {
+		border: 1px solid #AAA;
+		padding: 4px;
+		font-size: 20px;
+		width: calc(100vw - 360px);
+		height: 10vh;
+		border-radius: 8px;
+		white-space:pre;
+	}
+
+	#copy_share_container {
+		position: absolute;
+		width: 172px;
+		right: 128px;
+		bottom: 16px;
 	}
 </style>

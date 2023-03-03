@@ -33,6 +33,24 @@
 {/if}
 
 <style>
+    .word {
+        display: inline-block;
+        font-family: 'Ubuntu', sans-serif;
+        font-size: 20px;
+        cursor: pointer;
+        white-space:pre;
+    }
+
+    .word:hover {
+        color: #1565c0;
+        font-weight: bold;
+    }
+
+    .not_word:hover {
+        color: #660000;
+        font-weight: bold;
+    }
+
     .word.correct {
         color: blue;
     }
